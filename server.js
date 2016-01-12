@@ -46,10 +46,9 @@ var plans = [
     {from: "http://data.taipei/bus/EstiamteTime", to: "bus17", name: "預估到站時間"}
 ];
 
-firebaseRef.child("plans").set(plans);
-
 
 plans.forEach(function (plan) {
+    firebaseRef.child("plan_"+plan.to).set(plan);
     console.log("plan => " + plan.from + " " + plan.to + " " + plan.name);
     fetch_one_set_and_show_json_problem(get_option(plan.from), plan.to, plan.name);
 })
@@ -57,9 +56,9 @@ plans.forEach(function (plan) {
 function fetch_one_set_and_show_json_problem(opt_set, fb_set, name) {
     var onComplete = function (error) {
         if (error) {
-            console.log("..." + name + " " + opt_set.url + " =>https://omg2016tools.firebaseio.com/" + fb_set + '...Synchronization failed ######################');
+            console.log("------"+ fb_set + name + " " + opt_set.url + " =>https://omg2016tools.firebaseio.com/" + fb_set + '...Synchronization failed ######################');
         } else {
-            console.log("..." + name + " " + opt_set.url + " =>https://omg2016tools.firebaseio.com/" + fb_set + '...Synchronization succeeded!');
+            console.log("------" + fb_set+ name + " " + opt_set.url + " =>https://omg2016tools.firebaseio.com/" + fb_set + '...Synchronization succeeded!');
         }
     };
 
@@ -67,14 +66,16 @@ function fetch_one_set_and_show_json_problem(opt_set, fb_set, name) {
 
         if (!error && response.statusCode == 200) {
             // If response is gzip, unzip first
-            var encoding = response.headers['content-encoding']
+            var encoding = response.headers['content-encoding'];
             if (encoding && encoding.indexOf('gzip') >= 0) {
                 zlib.gunzip(body, function (err, dezipped) {
                     try {
+                        var before=dezipped.length.toLocaleString();
                         var json_string = dezipped.toString('utf-8');
-                        console.log("..." + opt_set.url + " , 解壓縮, ok! 準備解析json");
+                        console.log("--"+ fb_set  + name +" size=" +before+" , 解壓縮, ok! 準備解析json, size="+json_string.length.toLocaleString());
+                        
                     } catch (err) {
-                        console.log("...XXX 壓縮檔有問題 XXX " + name + " " + opt_set.url + " ");
+                        console.log("--XXX 壓縮檔有問題 XXX " + fb_set + name + " " + opt_set.url + " ");
                         return;
                     }
 
@@ -84,15 +85,76 @@ function fetch_one_set_and_show_json_problem(opt_set, fb_set, name) {
                     // var json= JSON.parse(json_string);
                     try {
                         var json = jsonlint.parse(json_string);
-                        console.log("......" + opt_set.url + " , json, ok! 準備寫入 firebase");
+                        console.log("--" + fb_set + name + " , json, ok! 準備寫入 firebase");
                         firebaseRef.child(fb_set).set(json, onComplete);
                     } catch (err) {
-                        console.log("......@@@ json 有問題 @@@" + name + " " + opt_set.url + " ,err = " + err);
+                        console.log("--@@@ json 有問題 @@@"+ fb_set  + name + " " + opt_set.url + " ,err = " + err);
                         //   console.log("err = "+err.message);
                     }
                 });
-            } else {
+            } else {  // PathDetail 附屬路線與路線對應資訊 1/12 20:52 跑到這邊來了
+                      // 
                 // Response is not gzipped
+                 // fix "id":"336	",
+                    
+                    // var json_string = body.replace("	", "");
+                    var json_string=body;
+                    console.log("xx"+ fb_set  + name +" , 不是完整的壓縮檔案, 先取能解壓縮的部份,再解析json");
+                    console.log("===============");
+                    console.log("http://www.gzip.org/recover.txt");
+                    console.log("===============");
+                    
+                    
+                    // https://fetch-bus01-twoutlook.c9users.io/get01.php?url=http://data.taipei/bus/PathDetail
+                    var url2="https://fetch-bus01-twoutlook.c9users.io/get01.php?url="+opt_set.url;
+                    
+                    
+                    var request = require('request');
+                      request(url2, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                          //console.log(body) // Show the HTML for the Google homepage.
+                          
+                            try {
+                          var json = jsonlint.parse(body);
+                        console.log("--" + fb_set + name + " , json, ok! 準備寫入 firebase");
+                        firebaseRef.child(fb_set).set(json, onComplete);
+                    } catch (err) {
+                       console.log("text:"+body.substr(1,100));
+                      
+                       console.log("err.message:"+err.message);
+                       console.log("err.name:"+err.name);
+                       
+                        console.log("--@@@ json 有問題 @@@"+ fb_set  + name + " " + opt_set.url + " ,err = " + err);
+                        //   console.log("err = "+err.message);
+                    }
+                          
+                          
+                          
+                        }
+                      })
+                    
+                    
+                    
+                    
+                    // request.get(get_option(url2), function (error, response, body) {
+                       
+                    //     var json= JSON.parse(body);
+                    // try {
+                    //     var json = jsonlint.parse(json_string);
+                    //     console.log("--" + fb_set + name + " , json, ok! 準備寫入 firebase");
+                    //     firebaseRef.child(fb_set).set(json, onComplete);
+                    // } catch (err) {
+                    //     console.log("--@@@ json 有問題 @@@"+ fb_set  + name + " " + opt_set.url + " ,err = " + err);
+                    //     //   console.log("err = "+err.message);
+                    // }
+                       
+                    // });
+                    
+                    
+                  
+                
+                
+                
             }
         }
     })
