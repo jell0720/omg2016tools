@@ -28,7 +28,7 @@ function get_option(urlx) {
 
 var plans = [
     {from: "http://data.taipei/bus/PathDetail", to: "bus01", name: "附屬路線與路線對應資訊"},
-    {from: "http://data.taipei/bus/CarInfo", to: "bus02", name: "附屬路線與路線對應資訊"},
+    {from: "http://data.taipei/bus/CarInfo", to: "bus02", name: "車輛基本資訊"},
     {from: "http://data.taipei/bus/OrgPathAttribute", to: "bus07", name: "路線、營業站對應"},
     {from: "http://data.taipei/bus/PROVIDER", to: "bus08", name: "業者營運基本資料"},
     {from: "http://data.taipei/bus/ROUTE", to: "bus09", name: "路線"},
